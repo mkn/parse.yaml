@@ -1,0 +1,28 @@
+
+
+name: parse.yaml
+version: master
+
+parent: lib
+
+profile:
+  - name: cmn
+    inc: p/include
+    if_arg:
+        win_shared: -DYAML_CPP_DLL -Dyaml_cpp_EXPORTS
+
+  - name: lib
+    parent: cmn
+    src: p/src
+
+  - name: test
+    parent: cmn
+    inc: p/test p/src
+    src: | 
+        p/test, 0
+        p/test/integration
+    dep:
+      - name: google.test
+        version: master
+    main: p/test/main.cpp
+    self: lib
