@@ -12,3 +12,5 @@ HAS=1
 [ ! -d "$CWD/$DIR" ] && HAS=0 && git clone --depth 1 $GIT_URL -b $VERSION $DIR --recursive
 
 [ $HAS -eq 1 ] && git pull --recurse-submodules origin $VERSION
+
+exit 0
