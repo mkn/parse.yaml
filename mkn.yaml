@@ -1,7 +1,6 @@
 
 
 name: parse.yaml
-version: master
 
 parent: lib
 
@@ -15,10 +14,14 @@ profile:
     parent: cmn
     src: p/src
 
+  - name: shared
+    parent: lib
+    mode: shared
+
   - name: test
     parent: cmn
     inc: p/test p/src
-    src: | 
+    src: |
         p/test, 0
         p/test/integration
     dep:
