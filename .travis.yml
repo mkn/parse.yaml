@@ -1,0 +1,53 @@
+
+matrix:
+  include:
+  - os: linux
+    dist: trusty
+    sudo: required
+    language: cpp
+    compiler: gcc
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+  - os: osx
+    sudo: required
+    osx_image: xcode9.1
+    language: cpp
+    compiler: clang
+
+before_install:
+  - git clone https://github.com/Dekken/maiken --depth 10 -b master maiken
+  - cd maiken
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then make bsd CXX="clang++"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then eval "${MATRIX_EVAL}"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make nix CXX=/usr/bin/g++-7; fi
+  - cp mkn ..
+  - cd ..
+  - ./mkn.sh
+
+script:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo ln -s /usr/bin/gcc-7 /usr/local/bin/gcc; sudo ln -s /usr/bin/g++-7 /usr/local/bin/g++; gcc -v; fi
+  - export KUL_GIT_CO="--depth 3"
+  - export MKN_LIB_LINK_LIB=1
+  - ./mkn build -dtSa "-std=c++14 -fPIC" -l "-pthread -ldl" -WOg 0
+
+deploy:
+  - provider: bintray
+    file: res/travis/mac_bintray.json
+    user: dekken
+    key:
+      secure: "8aKWqOvaqoUfBoSdOYDmlvlsf7ICfBT+YUUrCQEoVcfvy7zBJP5TmKM7ydgo51FNhJHpCfGhPMfmoenVLN9S50ebh9iVdbuwmTkjm4RG0yURoSmNxg5pAuc35ERxtGbM8YvnS2HafaCgW6y0n69ibx+en1QlMZpBQ8N8EZz2tT2cPgFJFdkaoWvjx3LpiNcbHhg0nJa4nUaqHCLgUNvOIARPCKZKHmVFBk7ULL8Kj/hvjlQQSdD1z4oZ0ZTmcS2gkUPgyHTTRysPIweq1d7jZ6Ziehy8qw5Vm02Bah26fdqkOkIjArmQ4X4wvduT2yq8Ad/F0V+SAuzYRr0SlrUWovpw1Xv5HmYaBXt1DrUwgm9sV1yah5+m3C5omvz4D8gwzcQv/1XFI1ofOUkUDysHfW22rZ+WnFl2adenFGdTK5CCy9ZjGWR13B7Iblpx3uMXpljUrxm5okRYi4lwCLnt0Ghmrcka89dIxqo13yptufudCbQc8llAZHyIwos6Yuqr26dFvRFABUk+53zfj7mNAzVgr9Pz2oHqlCfhBoWPpz8pDd5SRVAOyHnoX5ssjd0uGeLEeu41MFBHAmp3RIjiwsGzRHg1/xvYOkTqkoTvo6M993g4th68KaOdSu7oXgzEjLua1VeZoiVKxhQ5yZhezowxcuS4IX8eCNNbCk7L8U0="
+    edge:
+        branch: v1.8.47
+  - provider: bintray
+    file: res/travis/nix_bintray.json
+    user: dekken
+    key:
+      secure: "8aKWqOvaqoUfBoSdOYDmlvlsf7ICfBT+YUUrCQEoVcfvy7zBJP5TmKM7ydgo51FNhJHpCfGhPMfmoenVLN9S50ebh9iVdbuwmTkjm4RG0yURoSmNxg5pAuc35ERxtGbM8YvnS2HafaCgW6y0n69ibx+en1QlMZpBQ8N8EZz2tT2cPgFJFdkaoWvjx3LpiNcbHhg0nJa4nUaqHCLgUNvOIARPCKZKHmVFBk7ULL8Kj/hvjlQQSdD1z4oZ0ZTmcS2gkUPgyHTTRysPIweq1d7jZ6Ziehy8qw5Vm02Bah26fdqkOkIjArmQ4X4wvduT2yq8Ad/F0V+SAuzYRr0SlrUWovpw1Xv5HmYaBXt1DrUwgm9sV1yah5+m3C5omvz4D8gwzcQv/1XFI1ofOUkUDysHfW22rZ+WnFl2adenFGdTK5CCy9ZjGWR13B7Iblpx3uMXpljUrxm5okRYi4lwCLnt0Ghmrcka89dIxqo13yptufudCbQc8llAZHyIwos6Yuqr26dFvRFABUk+53zfj7mNAzVgr9Pz2oHqlCfhBoWPpz8pDd5SRVAOyHnoX5ssjd0uGeLEeu41MFBHAmp3RIjiwsGzRHg1/xvYOkTqkoTvo6M993g4th68KaOdSu7oXgzEjLua1VeZoiVKxhQ5yZhezowxcuS4IX8eCNNbCk7L8U0="
+    edge:
+        branch: v1.8.47
