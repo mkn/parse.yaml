@@ -5,13 +5,13 @@ name: parse.yaml
 parent: lib
 
 profile:
-  - name: cmn
+  - name: headers
     inc: p/include
     if_arg:
         win_shared: -DYAML_CPP_DLL -Dyaml_cpp_EXPORTS
 
   - name: lib
-    parent: cmn
+    parent: headers
     src: p/src
 
   - name: shared
@@ -19,7 +19,7 @@ profile:
     mode: shared
 
   - name: test
-    parent: cmn
+    parent: headers
     inc: p/test p/src
     src: |
         p/test, 0
