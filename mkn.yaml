@@ -1,4 +1,4 @@
-
+#! clean build -p test -dtOa -fPIC
 
 name: parse.yaml
 
@@ -7,12 +7,15 @@ parent: lib
 profile:
   - name: headers
     inc: p/include
+    sub: yaml_cpp#master&p(https://github.com/jbeder/yaml-cpp)
     if_arg:
-        win_shared: -DYAML_CPP_DLL -Dyaml_cpp_EXPORTS
+        static: -DYAML_CPP_STATIC_DEFINE
 
   - name: lib
     parent: headers
     src: p/src
+    if_arg:
+        win_shared: -Dyaml_cpp_EXPORTS
 
   - name: shared
     parent: lib
@@ -24,8 +27,8 @@ profile:
     src: |
         p/test, 0
         p/test/integration
-    dep:
-      - name: google.test
-        version: master
+    dep: google.test
     main: p/test/main.cpp
     self: lib
+    if_arg:
+        win_shared: -DGTEST_LINKED_AS_SHARED_LIBRARY=1
