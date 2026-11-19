@@ -1,7 +1,9 @@
 name: release
 
 # Release binaries, see res/ci/manifest.py: every PR into master or latest builds them, a PR merged into
-#  latest publishes them as mkn.yaml's version: that tag, a GitHub release marked latest, mkn.manifest.yml
+#  latest publishes them as mkn.yaml's version: that tag, a GitHub release marked latest, mkn.manifest.yml.
+#  A pre-release version (e.g. 0.8.0-beta.1) publishes a GitHub pre-release, never marked latest. Run by
+#  hand it only builds
 
 on:
   pull_request:
@@ -116,16 +118,20 @@ jobs:
         if [ -z "$version" ] || [ "$version" = master ]; then
           echo "mkn.yaml version must be a release on latest, not '$version'"; exit 1
         fi
+        commit=$REF
         if git ls-remote --exit-code --tags origin "refs/tags/$version" > /dev/null; then
           echo "tag $version exists, bump mkn.yaml version"; exit 1
         fi
-        python3 res/ci/manifest.py merge dist/mkn.manifest.yml "$version" "$REF" dist/*.json
+        python3 res/ci/manifest.py merge dist/mkn.manifest.yml "$version" "$commit" dist/*.json
         rm dist/*.json
         echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "commit=$commit" >> "$GITHUB_OUTPUT"
+        case "$version" in *-*) echo "prerelease=true";; *) echo "prerelease=false";; esac >> "$GITHUB_OUTPUT"
     - uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.version.outputs.version }}
         name: ${{ steps.version.outputs.version }}
-        target_commitish: ${{ env.REF }}
-        make_latest: true
+        target_commitish: ${{ steps.version.outputs.commit }}
+        prerelease: ${{ steps.version.outputs.prerelease }}
+        make_latest: ${{ steps.version.outputs.prerelease == 'false' }}
         files: dist/*
