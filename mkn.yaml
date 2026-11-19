@@ -1,13 +1,17 @@
 #! clean build -p test -dtOa -fPIC
 
 name: parse.yaml
+version: master     # on the latest branch a release, e.g. 0.8.0: merged there it is tagged and published
+
+property:
+  yaml_cpp: master  # yaml-cpp git ref, a tag on the latest branch
 
 parent: lib
 
 profile:
   - name: headers
     inc: p/include
-    sub: yaml_cpp#master&p(https://github.com/jbeder/yaml-cpp)
+    sub: yaml_cpp#${yaml_cpp}&p(https://github.com/jbeder/yaml-cpp)
 
   - name: lib
     parent: headers
