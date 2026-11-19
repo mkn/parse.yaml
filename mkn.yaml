@@ -8,14 +8,18 @@ profile:
   - name: headers
     inc: p/include
     sub: yaml_cpp#master&p(https://github.com/jbeder/yaml-cpp)
-    if_arg:
-        static: -DYAML_CPP_STATIC_DEFINE
 
   - name: lib
     parent: headers
     src: p/src
     if_arg:
         win_shared: -Dyaml_cpp_EXPORTS
+    pub_arg:  # with dependents: a static yaml-cpp's headers must not dllimport on Windows
+        static: -DYAML_CPP_STATIC_DEFINE
+
+  - name: static
+    parent: lib
+    mode: static
 
   - name: shared
     parent: lib
