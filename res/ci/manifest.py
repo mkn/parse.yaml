@@ -9,6 +9,7 @@ mkn.manifest.yml for a parse.yaml release, see .github/workflows/release.yml
         mkn.manifest.yml from every build's fragment
 
 A key names what a binary needs to match, e.g. "os=nix;arch=x86_64;cxxrt=libstdc++;libc=manylinux_2_28".
+maiken adds ";profile=<profile, @ for the top level>;mode=<static|shared>" to it.
 """
 
 import hashlib
@@ -46,7 +47,8 @@ def collect(out, key, mkn):
             files.append({"file": name, "sha256": sha256(os.path.join(out, name))})
         if not files:
             sys.exit(f"no libraries in {d}")
-        bins[f"{key};mode={mode}"] = files
+        # profile=@: bin/static and bin/shared are the top level built in each mode
+        bins[f"{key};profile=@;mode={mode}"] = files
     with open(os.path.join(out, f"{fields['os']}-{fields['arch']}.json"), "w") as f:
         json.dump({"mkn": mkn, "bins": bins}, f, indent=2)
 
