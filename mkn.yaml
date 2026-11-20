@@ -1,10 +1,10 @@
 #! clean build -p test -dtOa -fPIC
 
 name: parse.yaml
-version: master     # on the latest branch a release, e.g. 0.8.0: merged there it is tagged and published
+version: 0.8.0  # merged into latest: tagged and published, a pre-release (-beta.1) never marked latest
 
 property:
-  yaml_cpp: master  # yaml-cpp git ref, a tag on the latest branch
+  yaml_cpp: 0.8.0  # yaml-cpp git ref
 
 parent: lib
 
