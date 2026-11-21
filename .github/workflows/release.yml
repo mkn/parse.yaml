@@ -1,7 +1,8 @@
 name: release
 
-# Release binaries, see res/ci/manifest.py: every PR into master or latest builds them, a PR merged into
-#  latest publishes them as mkn.yaml's version: that tag, a GitHub release marked latest, mkn.manifest.yml.
+# Release binaries: every PR into master or latest builds them (mkn's manifest command collects each
+#  build into .mkn/manifest/), a PR merged into latest publishes them as mkn.yaml's version: that tag, a
+#  GitHub release marked latest, mkn.manifest.yml (every platform's merged).
 #  A pre-release version (e.g. 0.8.0-beta.1) publishes a GitHub pre-release, never marked latest. Run by
 #  hand it only builds
 
@@ -39,15 +40,12 @@ jobs:
         ref: ${{ env.REF }}
     - run: |
         $CURL_GET -o mkn ${PATH_GET}/${{ matrix.mkn }} && chmod +x mkn
-        ./mkn clean build -dtp static -a "$ARGS" -g 0
-        ./mkn clean build -dtp shared -a "$ARGS" -g 0
-        PY=$(command -v python3 || ls /opt/python/cp312-cp312/bin/python3)
-        $PY res/ci/manifest.py collect dist "os=nix;arch=${{ matrix.arch }};cxxrt=libstdc++;libc=manylinux_2_28" \
-          "$(./mkn -v | cut -d' ' -f1)"
+        for m in -K -S; do ./mkn clean build manifest -dt $m -p @ -a "$ARGS" -g 0; done
     - uses: actions/upload-artifact@v4.4.0
       with:
         name: nix-${{ matrix.arch }}
-        path: dist
+        path: .mkn/manifest
+        include-hidden-files: true  # .mkn/
         retention-days: 3
 
   macos:
@@ -61,14 +59,12 @@ jobs:
         ref: ${{ env.REF }}
     - run: |
         $CURL_GET -o mkn ${PATH_GET}/mkn_arm_osx && chmod +x mkn
-        ./mkn clean build -dtp static -a "$ARGS" -g 0
-        ./mkn clean build -dtp shared -a "$ARGS" -g 0
-        python3 res/ci/manifest.py collect dist "os=bsd;arch=arm64;cxxrt=libc++;macos=13.0" \
-          "$(./mkn -v | cut -d' ' -f1)"
+        for m in -K -S; do ./mkn clean build manifest -dt $m -p @ -a "$ARGS" -g 0; done
     - uses: actions/upload-artifact@v4.4.0
       with:
         name: bsd-arm64
-        path: dist
+        path: .mkn/manifest
+        include-hidden-files: true  # .mkn/
         retention-days: 3
 
   windows:
@@ -88,14 +84,12 @@ jobs:
         rm -f /usr/bin/link /bin/link  # Git's link interferes with cl's link.exe
         $CURL_GET -o mkn.exe ${PATH_GET}/mkn.exe
         WARGS="-EHsc -std:c++20 -O2 -DNDEBUG -MD"
-        ./mkn clean build -dtp static -a "$WARGS" -g 0
-        ./mkn clean build -dtp shared -a "$WARGS" -g 0
-        python res/ci/manifest.py collect dist "os=win;arch=x86_64;cxxrt=msvc;crt=md" \
-          "$(./mkn -v | cut -d' ' -f1)"
+        for m in -K -S; do ./mkn clean build manifest -dt $m -p @ -a "$WARGS" -g 0; done
     - uses: actions/upload-artifact@v4.4.0
       with:
         name: win-x86_64
-        path: dist
+        path: .mkn/manifest
+        include-hidden-files: true  # .mkn/
         retention-days: 3
 
   publish:
@@ -110,20 +104,21 @@ jobs:
         ref: ${{ env.REF }}
     - uses: actions/download-artifact@v5
       with:
-        path: dist
-        merge-multiple: true
+        path: dist  # a directory per platform, each with its mkn.manifest.yml
     - id: version
       run: |
-        version=$(sed -n 's/^version: *\([^ #]*\).*/\1/p' mkn.yaml)
-        if [ -z "$version" ] || [ "$version" = master ]; then
+        version=$(yq '.version' mkn.yaml)
+        if [ -z "$version" ] || [ "$version" = null ] || [ "$version" = master ]; then
           echo "mkn.yaml version must be a release on latest, not '$version'"; exit 1
         fi
         commit=$REF
         if git ls-remote --exit-code --tags origin "refs/tags/$version" > /dev/null; then
           echo "tag $version exists, bump mkn.yaml version"; exit 1
         fi
-        python3 res/ci/manifest.py merge dist/mkn.manifest.yml "$version" "$commit" dist/*.json
-        rm dist/*.json
+        mkdir release
+        find dist -type f ! -name mkn.manifest.yml -exec cp {} release/ \;  # the libraries
+        COMMIT=$commit yq ea '. as $i ireduce ({}; . * $i) | .commit = strenv(COMMIT)' \
+          dist/*/mkn.manifest.yml > release/mkn.manifest.yml
         echo "version=$version" >> "$GITHUB_OUTPUT"
         echo "commit=$commit" >> "$GITHUB_OUTPUT"
         case "$version" in *-*) echo "prerelease=true";; *) echo "prerelease=false";; esac >> "$GITHUB_OUTPUT"
@@ -134,4 +129,4 @@ jobs:
         target_commitish: ${{ steps.version.outputs.commit }}
         prerelease: ${{ steps.version.outputs.prerelease }}
         make_latest: ${{ steps.version.outputs.prerelease == 'false' }}
-        files: dist/*
+        files: release/*
