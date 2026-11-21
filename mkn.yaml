@@ -1,7 +1,7 @@
 #! clean build -p test -dtOa -fPIC
 
 name: parse.yaml
-version: 0.8.0  # merged into latest: tagged and published, a pre-release (-beta.1) never marked latest
+version: 0.8.1  # merged into latest: tagged and published, a pre-release (-beta.1) never marked latest
 
 property:
   yaml_cpp: 0.8.0  # yaml-cpp git ref
